@@ -6,20 +6,52 @@
     tools:context=".MainActivity">
 
     <Button
-        android:id="@+id/btnCoroutine"
-        android:text="Coroutine"
-        android:layout_centerInParent="true"
+        android:id="@+id/btnCoroutines"
+        android:text="   Coroutines   "
+        android:layout_above="@+id/btnRxKotlin"
+        android:layout_centerHorizontal="true"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:background="@drawable/button_selector"
         tools:ignore="HardcodedText" />
 
     <Button
         android:id="@+id/btnRxKotlin"
         android:text="RxKotlin"
-        android:layout_below="@+id/btnCoroutine"
+        android:layout_above="@+id/btnAsyncTask"
         android:layout_centerHorizontal="true"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:background="@drawable/button_selector"
+        tools:ignore="HardcodedText" />
+
+    <Button
+        android:id="@+id/btnAsyncTask"
+        android:text="   AsyncTask   "
+        android:layout_centerInParent="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/button_selector"
+        tools:ignore="HardcodedText" />
+
+    <Button
+        android:id="@+id/btnThread"
+        android:text="Thread"
+        android:layout_below="@+id/btnAsyncTask"
+        android:layout_centerHorizontal="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/button_selector"
+        tools:ignore="HardcodedText" />
+
+    <Button
+        android:id="@+id/btnService"
+        android:text="Service"
+        android:layout_below="@+id/btnThread"
+        android:layout_centerHorizontal="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/button_selector"
         tools:ignore="HardcodedText" />
 
     <FrameLayout

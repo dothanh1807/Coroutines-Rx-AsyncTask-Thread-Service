@@ -11,28 +11,38 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        btnCoroutine.setOnClickListener {
+        btnCoroutines.setOnClickListener {
             displayButton(false)
             supportFragmentManager
                 .beginTransaction()
                 .addToBackStack(null)
-                .replace(R.id.fragmentContainer, FragmentCorountine(), FragmentCorountine::class.toString())
+                .replace(R.id.fragmentContainer, FragmentCoroutine(), FragmentCoroutine::class.toString())
                 .commit()
         }
 
         btnRxKotlin.setOnClickListener {
             displayButton(false)
-
+            supportFragmentManager
+                .beginTransaction()
+                .addToBackStack(null)
+                .replace(R.id.fragmentContainer, FragmentRx(), FragmentRx::class.toString())
+                .commit()
         }
     }
 
     private fun displayButton(show: Boolean) {
         if (show) {
-            btnCoroutine.visibility = View.VISIBLE
+            btnCoroutines.visibility = View.VISIBLE
             btnRxKotlin.visibility = View.VISIBLE
+            btnAsyncTask.visibility = View.VISIBLE
+            btnThread.visibility = View.VISIBLE
+            btnService.visibility = View.VISIBLE
         } else {
-            btnCoroutine.visibility = View.INVISIBLE
+            btnCoroutines.visibility = View.INVISIBLE
             btnRxKotlin.visibility = View.INVISIBLE
+            btnAsyncTask.visibility = View.INVISIBLE
+            btnThread.visibility = View.INVISIBLE
+            btnService.visibility = View.INVISIBLE
         }
     }
 

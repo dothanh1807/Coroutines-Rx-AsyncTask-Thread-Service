@@ -14,12 +14,17 @@ import kotlinx.coroutines.flow.*
 import java.io.*
 import java.net.MalformedURLException
 import java.net.URL
+import kotlin.coroutines.CoroutineContext
 
 /**
  * Created by Vllenin on 2020-04-17.
  */
-class FragmentCorountine : Fragment() {
+class FragmentCoroutine : Fragment() {
 
+    /**
+     * Các coroutines đều cần được chạy với scope này để khi [onStop] sẽ cancel các coroutines,
+     * tránh memory leak.
+     */
     private val coroutineScopeInThisFragment =
         CoroutineScope(Dispatchers.Default + CoroutineName("CoroutinesDefault"))
 
@@ -33,11 +38,30 @@ class FragmentCorountine : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        button.setOnClickListener {
+        textView.text = FragmentCoroutine::class.java.simpleName
+        btnDownload.setOnClickListener {
+            val pathVideo = "android.resource://" + context?.packageName + "/" + R.raw.video
+            videoThumbnailsRx.generateThumbnailsWithCorountines(pathVideo) { measureTime ->
+                textViewMeasureTime.text = measureTime.toString()
+            }
+            /**
+             * Coroutine parent, launch with [CoroutineContext] = Dispatchers.Main
+             */
             coroutineScopeInThisFragment.launch(Dispatchers.Main) {
-                downloadImage(Link.ONE.path)
+                // Coroutine children
+                downloadImage(Link.ONE.path, 10)
+                    .flowOn(Dispatchers.Default)
+                    .catch { exception ->
+                        /**
+                         * Nếu trong quá trình "A cold asynchronous data stream that sequentially emits"
+                         * (tức là code trong function [downloadImage] chạy) bị exception ta quên
+                         * chưa xử lý, thì exception sẽ được bắn vào đây.
+                         */
+                        exception.printStackTrace()
+                        Log.d("XXX", "onError: - ${Thread.currentThread().name} $exception")
+                    }
                     .onCompletion { exception ->
-                        /** When cancel coroutineScope at [onStop] then onCompletion still called,
+                        /** When cancel() coroutineScope at [onStop] then onCompletion still called,
                          * but variable [isActive] = false
                          */
                         if (exception == null) {
@@ -45,15 +69,14 @@ class FragmentCorountine : Fragment() {
                                 Log.d("XXX", "onCompleted: - ${Thread.currentThread().name}")
                             }
                         } else {
-                            Log.d("XXX", "onFailed: - ${Thread.currentThread().name}")
+                            Log.d("XXX", "onFailed: - ${Thread.currentThread().name} $exception")
                         }
                     }
                     .onEach { value ->
-                        Log.d("XXX", "collect: $value - ${Thread.currentThread().name}")
-                        delay(10)
-                        if (value is Int) {
+                        if (value is Int && isVisible) {
+                            Log.d("XXX", "onEach: $value - ${Thread.currentThread().name}")
                             seekBar1.progress = value
-                        } else if (value is Bitmap) {
+                        } else if (value is Bitmap && isVisible) {
                             imageView1.setImageBitmap(value)
                         }
                     }
@@ -61,18 +84,27 @@ class FragmentCorountine : Fragment() {
                                             song song(cùng lúc), k phải đợi thằng này xong.
                                             Nếu dùng [collect] thì các coroutines ở dưới phải đợi
                                             thằng này chạy xong thì mới được chạy -> Mất nhiều
-                                            tgian hơn.*/
+                                            tgian hơn.
 
-                downloadImage(Link.TWO.path)
+                                            [onCompletion] and [onEach] and [collect] chạy trên
+                                            CoroutineContext nào phụ thuộc vào scope của thằng
+                                            [launchIn]: ở đây điền this tức là corountine parent.
+                                            Nếu dùng [collect] thì mặc định là chạy với context của
+                                            coroutine parent */
+
+                // Coroutine children
+                downloadImage(Link.TWO.path, 30)
+                    .flowOn(Dispatchers.Default)
                     .onEach { value ->
-                        delay(20)
-                        if (value is Int) {
+                        if (value is Int && isVisible) {
                             seekBar2.progress = value
-                        } else if (value is Bitmap) {
+                        } else if (value is Bitmap && isVisible) {
                             imageView2.setImageBitmap(value)
                         }
                     }
-                    .launchIn(this)
+                    .launchIn(this)/** Nếu thay this = CoroutineScope(Dispatchers.Main)
+                                            thì khi cancel ở [onStop] coroutine này sẽ k bị huỷ
+                                            mà vẫn chạy tiếp được, vì nó chạy với scope riêng*/
             }
         }
     }
@@ -82,7 +114,17 @@ class FragmentCorountine : Fragment() {
         coroutineScopeInThisFragment.cancel()
     }
 
-    private fun downloadImage(path: String): Flow<Any> = flow {
+    /**
+     * Thằng [flow] này được gọi là: "A cold asynchronous data stream that sequentially emits" ~ Luồng
+     * phát dữ liệu không đồng bộ.
+     * Code in this function will run with CoroutineContext is contex at [flowOn].
+     * This case run with flowOn( [CoroutineContext] = Dispatchers.Default )
+     *
+     * Để loại object là [Any] thì ta có thể emit bất cứ thứ gì, nhưng trong những thằng nhận
+     * như [filter], [map], [transform], [onEach], [collect], [flatMap],... thì phải check kiểu dữ
+     * liệu bằng operator 'is'.
+     */
+    private fun downloadImage(path: String, timeDelay: Long): Flow<Any> = flow {
         var inputStream: InputStream? = null
         var outputStream: OutputStream? = null
         try {
@@ -101,24 +143,26 @@ class FragmentCorountine : Fragment() {
                 if (data > 0) {
                     totalData += data.toLong()
                     Log.d("XXX", "emitting: $totalData - ${Thread.currentThread().name}")
-                    emit((totalData * 100 / sizeFile).toInt())
+                    delay(timeDelay)
+                    emit((totalData * 100 / sizeFile).toInt())/**~~~~~~~~~~~~ emit ~~~~~~~~~~~~~~~*/
                     outputStream.write(dataType, 0, data)
                 } else {
                     break
                 }
             }
             outputStream.flush()
-            val dataCompleted = byteArrayOutputStream.toByteArray()
-            val bitmap = BitmapFactory.decodeByteArray(dataCompleted, 0,
-                dataCompleted.size, BitmapFactory.Options())
-            emit(bitmap)
+            val bytes = byteArrayOutputStream.toByteArray()
+            val bitmap = BitmapFactory.decodeByteArray(bytes, 0,
+                bytes.size, BitmapFactory.Options())
+
+            emit(bitmap)/**~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ emit ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
         } catch (e: MalformedURLException) {
             e.printStackTrace()
         } catch (e: IOException) {
             e.printStackTrace()
         } finally {
             /**
-             * When cancel corountineScrop at [onStop] then block finally still called
+             * When cancel() coroutineScrop at [onStop] then block finally still called.
              */
             Log.d("XXX", "finally")
             try {
@@ -128,6 +172,6 @@ class FragmentCorountine : Fragment() {
                 e.printStackTrace()
             }
         }
-    }.flowOn(Dispatchers.Default)
+    }
 
 }
