@@ -9,8 +9,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import com.vllenin.corountinerx.Values.DISTANCE_DELAY_ONE
-import com.vllenin.corountinerx.Values.DISTANCE_DELAY_TWO
 import com.vllenin.corountinerx.Values.LINK_ONE
 import com.vllenin.corountinerx.Values.LINK_TWO
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
@@ -21,7 +19,6 @@ import io.reactivex.rxjava3.kotlin.plusAssign
 import io.reactivex.rxjava3.schedulers.Schedulers
 import kotlinx.android.synthetic.main.fragment.*
 import java.io.*
-import java.net.MalformedURLException
 import java.net.URL
 
 /**
@@ -59,7 +56,7 @@ class FragmentRx: Fragment() {
             }
 
             compositeDisposable.plusAssign(
-                downloadImage(LINK_ONE, DISTANCE_DELAY_ONE)
+                downloadImage(LINK_ONE)
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe({ value ->
@@ -68,10 +65,10 @@ class FragmentRx: Fragment() {
                          * Trường hợp này là observeOn(AndroidSchedulers.mainThread()) tức là
                          * chạy trên mainThread.
                          */
-                        if (value is Int) {
+                        if (value is Int && isVisible) {
                             Log.d("XXX", "subscribe: $value - ${Thread.currentThread().name}")
                             seekBar1.progress = value
-                        } else if (value is Bitmap) {
+                        } else if (value is Bitmap && isVisible) {
                             imageView1.setImageBitmap(value)
                             timeSeekbar1.text = "${System.currentTimeMillis() - timeStartDownloadImageOne} ms"
                         }
@@ -86,13 +83,13 @@ class FragmentRx: Fragment() {
                     })
             )
 
-            downloadImage(LINK_TWO, DISTANCE_DELAY_TWO)
+            downloadImage(LINK_TWO)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ value ->
-                    if (value is Int) {
+                    if (value is Int && isVisible) {
                         seekBar2.progress = value
-                    } else if (value is Bitmap) {
+                    } else if (value is Bitmap && isVisible) {
                         imageView2.setImageBitmap(value)
                         timeSeekbar2.text = "${System.currentTimeMillis() - timeStartDownloadImageTwo} ms"
                     }
@@ -114,8 +111,8 @@ class FragmentRx: Fragment() {
      * Trường hợp này là: subscribeOn(Schedulers.io()) tức là sẽ chạy ở thread khác, k phải
      * mainThread.
      */
-    private fun downloadImage(path: String, timeDelay: Long): Observable<Any> = Observable.create { emitter ->
-        if (timeDelay == DISTANCE_DELAY_ONE) {
+    private fun downloadImage(path: String): Observable<Any> = Observable.create { emitter ->
+        if (path.contains(LINK_ONE)) {
             timeStartDownloadImageOne = System.currentTimeMillis()
         } else {
             timeStartDownloadImageTwo = System.currentTimeMillis()
@@ -133,17 +130,21 @@ class FragmentRx: Fragment() {
             val dataType = ByteArray(1024)
             var data: Int
             var totalData: Long = 0
+            var percent = 0
             while (true) {
                 if (emitter.isDisposed) {
                     return@create
                 }
                 data = inputStream.read(dataType)
                 if (data > 0) {
+//                    Thread.sleep(DISTANCE_DELAY)
                     totalData += data.toLong()
-                    Log.d("XXX", "emitting: $totalData - ${Thread.currentThread().name}")
-//                    Thread.sleep(timeDelay)
-                    emitter.onNext((totalData * 100 / sizeFile).toInt())/**~~~~~~~ emit ~~~~~~~~~~*/
                     outputStream.write(dataType, 0, data)
+                    if ((totalData * 100 / sizeFile).toInt() - percent >= 1) {
+                        percent = (totalData * 100 / sizeFile).toInt()
+                        Log.d("XXX", "emitting: $percent - ${Thread.currentThread().name}")
+                        emitter.onNext(percent)/**~~~~~~~~~~~~~~~~~~~~~ emit ~~~~~~~~~~~~~~~~~~~~~*/
+                    }
                 } else {
                     break
                 }
@@ -154,14 +155,12 @@ class FragmentRx: Fragment() {
                 dataCompleted.size, BitmapFactory.Options())
 
             emitter.onNext(bitmap)/**~~~~~~~~~~~~~~~~~~~~~~~~~~~ emit ~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-        } catch (e: MalformedURLException) {
-            e.printStackTrace()
-        } catch (e: IOException) {
-            e.printStackTrace()
         } catch (e: Exception) {
             e.printStackTrace()
-            Log.d("XXX", "$e")
         } finally {
+            /**
+             * Khối finally luôn luôn được gọi dù Observable dừng lại do bất cứ nguyên nhân gì.
+             */
             try {
                 inputStream?.close()
                 outputStream?.close()

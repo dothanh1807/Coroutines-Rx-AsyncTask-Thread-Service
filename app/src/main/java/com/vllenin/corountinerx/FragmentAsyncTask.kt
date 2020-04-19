@@ -10,13 +10,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import com.vllenin.corountinerx.Values.DISTANCE_DELAY_ONE
-import com.vllenin.corountinerx.Values.DISTANCE_DELAY_TWO
 import com.vllenin.corountinerx.Values.LINK_ONE
 import com.vllenin.corountinerx.Values.LINK_TWO
 import kotlinx.android.synthetic.main.fragment.*
 import java.io.*
-import java.net.MalformedURLException
 import java.net.URL
 
 /**
@@ -49,17 +46,17 @@ class FragmentAsyncTask: Fragment() {
                 }
             }
 
-            mapTask[LINK_ONE] = DownloadImageTask(DISTANCE_DELAY_ONE) { value ->
+            mapTask[LINK_ONE] = DownloadImageTask(LINK_ONE) { value ->
                 if (value is Int && isVisible) {
                     seekBar1.progress = value
                 } else if (value is Bitmap && isVisible) {
                     imageView1.setImageBitmap(value)
-                } else if (value is String) {
+                } else if (value is String && isVisible) {
                     timeSeekbar1.text = "$value ms"
                     mapTask.remove(LINK_ONE)
                     Log.d("XXX", "~~~~~~~~~~~~~~~~~~~~~~ mapTask.remove ${mapTask.size}")
                 }
-            }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, LINK_ONE)/** Nếu dùng
+            }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR)/** Nếu dùng
                                         execute(..) thì chỉ chạy được 1 AsyncTask trong 1
                                         thời điểm. Vậy nên muốn nhiều AsyncTask được chạy đồng
                                         thời thì phải dùng executeOnExecutor(..).
@@ -77,17 +74,17 @@ class FragmentAsyncTask: Fragment() {
                                         vì 5 task chạy trong thread pool, nhưng còn 129 task kia
                                         vượt quá size(128) của queue. */
 
-            mapTask[LINK_TWO] = DownloadImageTask(DISTANCE_DELAY_TWO) { value ->
+            mapTask[LINK_TWO] = DownloadImageTask(LINK_TWO) { value ->
                 if (value is Int && isVisible) {
                     seekBar2.progress = value
                 } else if (value is Bitmap && isVisible) {
                     imageView2.setImageBitmap(value)
-                } else if (value is String) {
+                } else if (value is String && isVisible) {
                     timeSeekbar2.text = "$value ms"
                     mapTask.remove(LINK_TWO)
                     Log.d("XXX", "~~~~~~~~~~~~~~~~~~~~~~ mapTask.remove ${mapTask.size}")
                 }
-            }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, LINK_TWO)
+            }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
         }
     }
 
@@ -106,7 +103,7 @@ class FragmentAsyncTask: Fragment() {
     }
 
     class DownloadImageTask(
-        private val timeDelay: Long,
+        private val path: String,
         private val callback: (any: Any) -> Unit
     ) : AsyncTask<String, Any, String>() {
 
@@ -114,7 +111,7 @@ class FragmentAsyncTask: Fragment() {
         private var timeStartDownloadImageTwo = 0L
 
         override fun onPreExecute() {
-            if (timeDelay == DISTANCE_DELAY_ONE) {
+            if (path.contains(LINK_ONE)) {
                 timeStartDownloadImageOne = System.currentTimeMillis()
             } else {
                 timeStartDownloadImageTwo = System.currentTimeMillis()
@@ -128,7 +125,7 @@ class FragmentAsyncTask: Fragment() {
             var inputStream: InputStream? = null
             var outputStream: OutputStream? = null
             try {
-                val url = URL(paths[0])
+                val url = URL(path)
                 val connection = url.openConnection()
                 val sizeFile = connection?.contentLength ?: -1
                 inputStream = BufferedInputStream(url.openStream())
@@ -138,14 +135,18 @@ class FragmentAsyncTask: Fragment() {
                 val dataType = ByteArray(1024)
                 var data: Int
                 var totalData: Long = 0
+                var percent = 0
                 while (true) {
                     data = inputStream.read(dataType)
                     if (data > 0) {
+//                        Thread.sleep(DISTANCE_DELAY)
                         totalData += data.toLong()
-                        Log.d("XXX", "emitting: $totalData - ${Thread.currentThread().name}")
-//                        Thread.sleep(timeDelay)
-                        publishProgress((totalData * 100 / sizeFile).toInt())/**~~~~~ emit ~~~~~~~*/
                         outputStream.write(dataType, 0, data)
+                        if ((totalData * 100 / sizeFile).toInt() - percent >= 1) {
+                            percent = (totalData * 100 / sizeFile).toInt()
+                            Log.d("XXX", "emitting: $percent - ${Thread.currentThread().name}")
+                            publishProgress(percent)/**~~~~~~~~~~~~~~~~~~~ emit ~~~~~~~~~~~~~~~~*/
+                        }
                     } else {
                         break
                     }
@@ -156,16 +157,13 @@ class FragmentAsyncTask: Fragment() {
                     dataCompleted.size, BitmapFactory.Options())
 
                 publishProgress(bitmap)/**~~~~~~~~~~~~~~~~~~~~~~~~~~ emit ~~~~~~~~~~~~~~~~~~~~~~~*/
-            } catch (e: MalformedURLException) {
-                e.printStackTrace()
-                return "Failed"
-            } catch (e: IOException) {
-                e.printStackTrace()
-                return "Failed"
             } catch (e: Exception) {
                 e.printStackTrace()
                 return "Failed"
             } finally {
+                /**
+                 * Khối finally luôn luôn được gọi dù AsyncTask dừng lại do bất cứ nguyên nhân gì.
+                 */
                 try {
                     inputStream?.close()
                     outputStream?.close()
@@ -188,7 +186,7 @@ class FragmentAsyncTask: Fragment() {
 
         override fun onPostExecute(result: String) {
             Log.d("XXX", "onPostExecute")
-            if (timeDelay == DISTANCE_DELAY_ONE) {
+            if (path.contains(LINK_ONE)) {
                 callback.invoke("${System.currentTimeMillis() - timeStartDownloadImageOne}")
             } else {
                 callback.invoke("${System.currentTimeMillis() - timeStartDownloadImageTwo}")

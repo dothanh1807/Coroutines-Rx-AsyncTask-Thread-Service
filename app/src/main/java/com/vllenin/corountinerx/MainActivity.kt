@@ -37,6 +37,15 @@ class MainActivity : AppCompatActivity() {
                 .replace(R.id.fragmentContainer, FragmentAsyncTask(), FragmentAsyncTask::class.toString())
                 .commit()
         }
+
+        btnThread.setOnClickListener {
+            displayButton(false)
+            supportFragmentManager
+                .beginTransaction()
+                .addToBackStack(null)
+                .replace(R.id.fragmentContainer, FragmentThread(), FragmentThread::class.toString())
+                .commit()
+        }
     }
 
     private fun displayButton(show: Boolean) {
@@ -67,6 +76,5 @@ object Values{
     const val LINK_TWO = "https://www.gettyimages.ca/gi-resources/images/Homepage/Hero/UK/CMS_Creative_164657191_Kingfisher.jpg"
 
     const val DISTANCE_TIME_THUMBNAILS = 2000
-    const val DISTANCE_DELAY_ONE = 10L
-    const val DISTANCE_DELAY_TWO = 30L
+    const val DISTANCE_DELAY = 20L
 }

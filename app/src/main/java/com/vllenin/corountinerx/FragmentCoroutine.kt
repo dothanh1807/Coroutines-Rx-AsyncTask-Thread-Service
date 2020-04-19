@@ -9,15 +9,12 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import com.vllenin.corountinerx.Values.DISTANCE_DELAY_ONE
-import com.vllenin.corountinerx.Values.DISTANCE_DELAY_TWO
 import com.vllenin.corountinerx.Values.LINK_ONE
 import com.vllenin.corountinerx.Values.LINK_TWO
 import kotlinx.android.synthetic.main.fragment.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import java.io.*
-import java.net.MalformedURLException
 import java.net.URL
 import kotlin.coroutines.CoroutineContext
 
@@ -60,7 +57,7 @@ class FragmentCoroutine : Fragment() {
              */
             coroutineScopeInThisFragment.launch(Dispatchers.Main) {
                 // Coroutine children
-                downloadImage(LINK_ONE, DISTANCE_DELAY_ONE)
+                downloadImage(LINK_ONE)
                     .flowOn(Dispatchers.Default)
                     .catch { exception ->
                         /**
@@ -69,7 +66,6 @@ class FragmentCoroutine : Fragment() {
                          * chưa xử lý, thì exception sẽ được bắn vào đây.
                          */
                         exception.printStackTrace()
-                        Log.d("XXX", "onError: - ${Thread.currentThread().name} $exception")
                     }
                     .onCompletion { exception ->
                         /** When cancel() coroutineScope at [onStop] then onCompletion still called,
@@ -78,10 +74,9 @@ class FragmentCoroutine : Fragment() {
                         if (exception == null) {
                             if (isActive) {
                                 timeSeekbar1.text = "${System.currentTimeMillis() - timeStartDownloadImageOne} ms"
-                                Log.d("XXX", "onCompleted: - ${Thread.currentThread().name}")
                             }
                         } else {
-                            Log.d("XXX", "onFailed: - ${Thread.currentThread().name} $exception")
+
                         }
                     }
                     .onEach { value ->
@@ -105,10 +100,12 @@ class FragmentCoroutine : Fragment() {
                                             coroutine parent */
 
                 // Coroutine children
-                downloadImage(LINK_TWO, DISTANCE_DELAY_TWO)
+                downloadImage(LINK_TWO)
                     .flowOn(Dispatchers.Default)
                     .onCompletion {
-                        timeSeekbar2.text = "${System.currentTimeMillis() - timeStartDownloadImageTwo} ms"
+                        if (isActive) {
+                            timeSeekbar2.text = "${System.currentTimeMillis() - timeStartDownloadImageTwo} ms"
+                        }
                     }
                     .onEach { value ->
                         if (value is Int && isVisible) {
@@ -139,8 +136,8 @@ class FragmentCoroutine : Fragment() {
      * nhưng trong những thằng nhận như [filter], [map], [transform], [onEach], [collect],
      * [flatMap],... thì phải check kiểu dữ liệu bằng operator 'is'.
      */
-    private fun downloadImage(path: String, timeDelay: Long): Flow<Any> = flow {
-        if (timeDelay == DISTANCE_DELAY_ONE) {
+    private fun downloadImage(path: String): Flow<Any> = flow {
+        if (path.contains(LINK_ONE)) {
             timeStartDownloadImageOne = System.currentTimeMillis()
         } else {
             timeStartDownloadImageTwo = System.currentTimeMillis()
@@ -158,14 +155,18 @@ class FragmentCoroutine : Fragment() {
             val dataType = ByteArray(1024)
             var data: Int
             var totalData: Long = 0
+            var percent = 0
             while (true) {
                 data = inputStream.read(dataType)
                 if (data > 0) {
+//                    delay(DISTANCE_DELAY)
                     totalData += data.toLong()
-                    Log.d("XXX", "emitting: $totalData - ${Thread.currentThread().name}")
-//                    delay(timeDelay)
-                    emit((totalData * 100 / sizeFile).toInt())/**~~~~~~~~~~~~ emit ~~~~~~~~~~~~~~~*/
                     outputStream.write(dataType, 0, data)
+                    if ((totalData * 100 / sizeFile).toInt() - percent >= 1) {
+                        percent = (totalData * 100 / sizeFile).toInt()
+                        Log.d("XXX", "emitting: $percent - ${Thread.currentThread().name}")
+                        emit(percent)/**~~~~~~~~~~~~~~~~~~~~~~~ emit ~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+                    }
                 } else {
                     break
                 }
@@ -176,13 +177,11 @@ class FragmentCoroutine : Fragment() {
                 bytes.size, BitmapFactory.Options())
 
             emit(bitmap)/**~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ emit ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-        } catch (e: MalformedURLException) {
-            e.printStackTrace()
-        } catch (e: IOException) {
+        } catch (e: Exception) {
             e.printStackTrace()
         } finally {
             /**
-             * When cancel() coroutineScrop at [onStop] then block finally still called.
+             * When cancel() coroutineScrope at [onStop] then block finally still called.
              */
             Log.d("XXX", "finally")
             try {
