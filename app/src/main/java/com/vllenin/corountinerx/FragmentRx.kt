@@ -1,5 +1,6 @@
 package com.vllenin.corountinerx
 
+import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Bundle
@@ -8,6 +9,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import com.vllenin.corountinerx.Values.DISTANCE_DELAY_ONE
+import com.vllenin.corountinerx.Values.DISTANCE_DELAY_TWO
+import com.vllenin.corountinerx.Values.LINK_ONE
+import com.vllenin.corountinerx.Values.LINK_TWO
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.disposables.CompositeDisposable
@@ -30,6 +35,9 @@ class FragmentRx: Fragment() {
      */
     private val compositeDisposable = CompositeDisposable()
 
+    private var timeStartDownloadImageOne = 0L
+    private var timeStartDownloadImageTwo = 0L
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -38,17 +46,20 @@ class FragmentRx: Fragment() {
         return inflater.inflate(R.layout.fragment, container, false)
     }
 
+    @SuppressLint("SetTextI18n")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         textView.text = FragmentRx::class.java.simpleName
         btnDownload.setOnClickListener {
             val pathVideo = "android.resource://" + context?.packageName + "/" + R.raw.video
-            videoThumbnailsRx.generateThumbnailsWithRx(pathVideo) { measureTime ->
-                textViewMeasureTime.text = measureTime.toString()
+            videoThumbnails.generateThumbnailsWithRx(pathVideo) { measureTime ->
+                if (isVisible) {
+                    textViewMeasureTime.text = "Time generate thumbnails: $measureTime ms"
+                }
             }
 
             compositeDisposable.plusAssign(
-                downloadImage(Link.ONE.path, 10)
+                downloadImage(LINK_ONE, DISTANCE_DELAY_ONE)
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe({ value ->
@@ -62,6 +73,7 @@ class FragmentRx: Fragment() {
                             seekBar1.progress = value
                         } else if (value is Bitmap) {
                             imageView1.setImageBitmap(value)
+                            timeSeekbar1.text = "${System.currentTimeMillis() - timeStartDownloadImageOne} ms"
                         }
                     }, { exception ->
                         /**
@@ -74,7 +86,7 @@ class FragmentRx: Fragment() {
                     })
             )
 
-            downloadImage(Link.TWO.path, 30)
+            downloadImage(LINK_TWO, DISTANCE_DELAY_TWO)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ value ->
@@ -82,6 +94,7 @@ class FragmentRx: Fragment() {
                         seekBar2.progress = value
                     } else if (value is Bitmap) {
                         imageView2.setImageBitmap(value)
+                        timeSeekbar2.text = "${System.currentTimeMillis() - timeStartDownloadImageTwo} ms"
                     }
                 }, {
 
@@ -102,6 +115,11 @@ class FragmentRx: Fragment() {
      * mainThread.
      */
     private fun downloadImage(path: String, timeDelay: Long): Observable<Any> = Observable.create { emitter ->
+        if (timeDelay == DISTANCE_DELAY_ONE) {
+            timeStartDownloadImageOne = System.currentTimeMillis()
+        } else {
+            timeStartDownloadImageTwo = System.currentTimeMillis()
+        }
         var inputStream: InputStream? = null
         var outputStream: OutputStream? = null
         try {
@@ -123,7 +141,7 @@ class FragmentRx: Fragment() {
                 if (data > 0) {
                     totalData += data.toLong()
                     Log.d("XXX", "emitting: $totalData - ${Thread.currentThread().name}")
-                    Thread.sleep(timeDelay)
+//                    Thread.sleep(timeDelay)
                     emitter.onNext((totalData * 100 / sizeFile).toInt())/**~~~~~~~ emit ~~~~~~~~~~*/
                     outputStream.write(dataType, 0, data)
                 } else {

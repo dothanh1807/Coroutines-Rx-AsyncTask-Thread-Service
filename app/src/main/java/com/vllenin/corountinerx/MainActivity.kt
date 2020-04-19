@@ -28,6 +28,15 @@ class MainActivity : AppCompatActivity() {
                 .replace(R.id.fragmentContainer, FragmentRx(), FragmentRx::class.toString())
                 .commit()
         }
+
+        btnAsyncTask.setOnClickListener {
+            displayButton(false)
+            supportFragmentManager
+                .beginTransaction()
+                .addToBackStack(null)
+                .replace(R.id.fragmentContainer, FragmentAsyncTask(), FragmentAsyncTask::class.toString())
+                .commit()
+        }
     }
 
     private fun displayButton(show: Boolean) {
@@ -53,7 +62,11 @@ class MainActivity : AppCompatActivity() {
 
 }
 
-enum class Link(val path: String){
-    ONE("https://anhdephd.com/wp-content/uploads/2018/02/bo-hinh-nen-thien-nhien-phong-canh-dep-cho-may-tinh-pc-laptop.jpg"),
-    TWO("https://www.gettyimages.ca/gi-resources/images/Homepage/Hero/UK/CMS_Creative_164657191_Kingfisher.jpg")
+object Values{
+    const val LINK_ONE = "https://anhdephd.com/wp-content/uploads/2018/02/bo-hinh-nen-thien-nhien-phong-canh-dep-cho-may-tinh-pc-laptop.jpg"
+    const val LINK_TWO = "https://www.gettyimages.ca/gi-resources/images/Homepage/Hero/UK/CMS_Creative_164657191_Kingfisher.jpg"
+
+    const val DISTANCE_TIME_THUMBNAILS = 2000
+    const val DISTANCE_DELAY_ONE = 10L
+    const val DISTANCE_DELAY_TWO = 30L
 }

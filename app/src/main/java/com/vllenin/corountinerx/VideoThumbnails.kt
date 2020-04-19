@@ -5,10 +5,13 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.media.MediaMetadataRetriever
 import android.net.Uri
+import android.os.AsyncTask
 import android.util.AttributeSet
 import android.util.DisplayMetrics
+import android.util.Size
 import android.view.View
 import android.view.WindowManager
+import com.vllenin.corountinerx.Values.DISTANCE_TIME_THUMBNAILS
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.disposables.CompositeDisposable
@@ -27,10 +30,6 @@ class VideoThumbnails constructor(
     context: Context,
     attrs: AttributeSet
 ) : View(context, attrs) {
-
-    companion object {
-        private const val DISTANCE_TIME_THUMBNAILS = 2000
-    }
 
     private var timeStart = 0L
     private var thumbWidth = 0
@@ -147,7 +146,7 @@ class VideoThumbnails constructor(
         }
     }
 
-    /******************************** Use Kotlin Coroutine **************************************/
+    /******************************** Use Kotlin Coroutines **************************************/
 
     fun generateThumbnailsWithCorountines(path: String, callback: (measureTime: Long) -> Unit) {
         timeStart = System.currentTimeMillis()
@@ -215,5 +214,92 @@ class VideoThumbnails constructor(
             frameVideo?.recycle()
             centerCropBitmap?.recycle()
         }
+    }
+
+    /********************************** Use AsyncTask *******************************************/
+
+    fun generateThumbnailsWithAsyncTask(path: String, callback: (measureTime: Long) -> Unit) {
+        timeStart = System.currentTimeMillis()
+        val retriever = MediaMetadataRetriever()
+        retriever.setDataSource(context, Uri.parse(path))
+        val durationVideo =
+            retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION).toLong()
+        val numThumbnails = (durationVideo / DISTANCE_TIME_THUMBNAILS).toInt()
+        val interval = durationVideo * 1000 / numThumbnails
+
+        val newLayoutParams = layoutParams
+        newLayoutParams.width = thumbWidth * numThumbnails
+        layoutParams = newLayoutParams
+
+        ThumbnailsFactoryTask { value ->
+            if (value is Bitmap) {
+                listThumbnails.add(value)
+                invalidate()
+            } else if (value is String){
+                callback.invoke(System.currentTimeMillis() - timeStart)
+            }
+        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR,
+            retriever, numThumbnails, interval, Size(thumbWidth, thumbHeight))
+    }
+
+    class ThumbnailsFactoryTask(
+        private val callback: (bitmap: Any) -> Unit
+    ): AsyncTask<Any, Bitmap, String>() {
+
+        override fun doInBackground(vararg params: Any): String {
+            val retriever = params[0] as MediaMetadataRetriever
+            val numThumbnails = params[1] as Int
+            val interval = params[2] as Long
+            val sizeThumbnail = params[3] as Size
+
+            var frameVideo: Bitmap? = null
+            var centerCropBitmap: Bitmap? = null
+            try {
+                (0 until numThumbnails).forEach { index ->
+                    frameVideo = retriever.getFrameAtTime(index * interval,
+                        MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+
+                    frameVideo?.let { bitmapOrigin ->
+                        centerCropBitmap = if (bitmapOrigin.height > bitmapOrigin.width) {
+                            Bitmap.createBitmap(bitmapOrigin,
+                                0,
+                                bitmapOrigin.height / 2 - bitmapOrigin.width / 2,
+                                bitmapOrigin.width,
+                                bitmapOrigin.width)
+                        } else {
+                            Bitmap.createBitmap(bitmapOrigin,
+                                bitmapOrigin.width / 2 - bitmapOrigin.height / 2,
+                                0,
+                                bitmapOrigin.height,
+                                bitmapOrigin.height)
+                        }
+
+                        centerCropBitmap?.let { copped ->
+                            val bitmapScaled = Bitmap.createScaledBitmap(copped,
+                                sizeThumbnail.width, sizeThumbnail.height, false)
+
+                            publishProgress(bitmapScaled)/**~~~~~~~~~~~~~~~~~~ emit ~~~~~~~~~~~~~*/
+                        }
+                    }
+                }
+            } catch (e: IllegalArgumentException) {
+                e.printStackTrace()
+            } finally {
+                retriever.release()
+                frameVideo?.recycle()
+                centerCropBitmap?.recycle()
+            }
+
+            return "Done"
+        }
+
+        override fun onProgressUpdate(vararg values: Bitmap) {
+            callback.invoke(values[0])
+        }
+
+        override fun onPostExecute(result: String) {
+            callback.invoke(result)
+        }
+
     }
 }

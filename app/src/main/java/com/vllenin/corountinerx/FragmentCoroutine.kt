@@ -1,5 +1,6 @@
 package com.vllenin.corountinerx
 
+import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Bundle
@@ -8,6 +9,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import com.vllenin.corountinerx.Values.DISTANCE_DELAY_ONE
+import com.vllenin.corountinerx.Values.DISTANCE_DELAY_TWO
+import com.vllenin.corountinerx.Values.LINK_ONE
+import com.vllenin.corountinerx.Values.LINK_TWO
 import kotlinx.android.synthetic.main.fragment.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -28,6 +33,9 @@ class FragmentCoroutine : Fragment() {
     private val coroutineScopeInThisFragment =
         CoroutineScope(Dispatchers.Default + CoroutineName("CoroutinesDefault"))
 
+    private var timeStartDownloadImageOne = 0L
+    private var timeStartDownloadImageTwo = 0L
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -36,20 +44,23 @@ class FragmentCoroutine : Fragment() {
         return inflater.inflate(R.layout.fragment, container, false)
     }
 
+    @SuppressLint("SetTextI18n")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         textView.text = FragmentCoroutine::class.java.simpleName
         btnDownload.setOnClickListener {
             val pathVideo = "android.resource://" + context?.packageName + "/" + R.raw.video
-            videoThumbnailsRx.generateThumbnailsWithCorountines(pathVideo) { measureTime ->
-                textViewMeasureTime.text = measureTime.toString()
+            videoThumbnails.generateThumbnailsWithCorountines(pathVideo) { measureTime ->
+                if (isVisible) {
+                    textViewMeasureTime.text = "Time generate thumbnails: $measureTime ms"
+                }
             }
             /**
              * Coroutine parent, launch with [CoroutineContext] = Dispatchers.Main
              */
             coroutineScopeInThisFragment.launch(Dispatchers.Main) {
                 // Coroutine children
-                downloadImage(Link.ONE.path, 10)
+                downloadImage(LINK_ONE, DISTANCE_DELAY_ONE)
                     .flowOn(Dispatchers.Default)
                     .catch { exception ->
                         /**
@@ -66,6 +77,7 @@ class FragmentCoroutine : Fragment() {
                          */
                         if (exception == null) {
                             if (isActive) {
+                                timeSeekbar1.text = "${System.currentTimeMillis() - timeStartDownloadImageOne} ms"
                                 Log.d("XXX", "onCompleted: - ${Thread.currentThread().name}")
                             }
                         } else {
@@ -93,8 +105,11 @@ class FragmentCoroutine : Fragment() {
                                             coroutine parent */
 
                 // Coroutine children
-                downloadImage(Link.TWO.path, 30)
+                downloadImage(LINK_TWO, DISTANCE_DELAY_TWO)
                     .flowOn(Dispatchers.Default)
+                    .onCompletion {
+                        timeSeekbar2.text = "${System.currentTimeMillis() - timeStartDownloadImageTwo} ms"
+                    }
                     .onEach { value ->
                         if (value is Int && isVisible) {
                             seekBar2.progress = value
@@ -120,11 +135,16 @@ class FragmentCoroutine : Fragment() {
      * Code in this function will run with CoroutineContext is contex at [flowOn].
      * This case run with flowOn( [CoroutineContext] = Dispatchers.Default )
      *
-     * Để loại object là [Any] thì ta có thể emit bất cứ thứ gì, nhưng trong những thằng nhận
-     * như [filter], [map], [transform], [onEach], [collect], [flatMap],... thì phải check kiểu dữ
-     * liệu bằng operator 'is'.
+     * Để loại object là [Any] (trong Java thì để là Objects) thì ta có thể emit bất cứ thứ gì,
+     * nhưng trong những thằng nhận như [filter], [map], [transform], [onEach], [collect],
+     * [flatMap],... thì phải check kiểu dữ liệu bằng operator 'is'.
      */
     private fun downloadImage(path: String, timeDelay: Long): Flow<Any> = flow {
+        if (timeDelay == DISTANCE_DELAY_ONE) {
+            timeStartDownloadImageOne = System.currentTimeMillis()
+        } else {
+            timeStartDownloadImageTwo = System.currentTimeMillis()
+        }
         var inputStream: InputStream? = null
         var outputStream: OutputStream? = null
         try {
@@ -143,7 +163,7 @@ class FragmentCoroutine : Fragment() {
                 if (data > 0) {
                     totalData += data.toLong()
                     Log.d("XXX", "emitting: $totalData - ${Thread.currentThread().name}")
-                    delay(timeDelay)
+//                    delay(timeDelay)
                     emit((totalData * 100 / sizeFile).toInt())/**~~~~~~~~~~~~ emit ~~~~~~~~~~~~~~~*/
                     outputStream.write(dataType, 0, data)
                 } else {

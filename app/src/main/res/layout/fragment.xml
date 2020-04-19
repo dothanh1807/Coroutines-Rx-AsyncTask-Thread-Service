@@ -46,16 +46,30 @@
         <SeekBar
             android:id="@+id/seekBar1"
             android:layout_below="@id/textView"
-            android:layout_centerInParent="true"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
 
+        <TextView
+            android:id="@+id/timeSeekbar1"
+            android:layout_below="@id/textView"
+            android:layout_centerHorizontal="true"
+            android:textColor="#2035EE"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
         <SeekBar
             android:id="@+id/seekBar2"
-            android:layout_centerHorizontal="true"
             android:layout_below="@+id/seekBar1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
+
+        <TextView
+            android:id="@+id/timeSeekbar2"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@+id/seekBar1"
+            android:textColor="#2035EE"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
 
         <HorizontalScrollView
             android:layout_below="@id/seekBar2"
@@ -67,7 +81,7 @@
                 android:layout_height="60dp"
                 android:orientation="horizontal">
                 <com.vllenin.corountinerx.VideoThumbnails
-                    android:id="@+id/videoThumbnailsRx"
+                    android:id="@+id/videoThumbnails"
                     android:layout_width="wrap_content"
                     android:layout_height="60dp"/>
 
