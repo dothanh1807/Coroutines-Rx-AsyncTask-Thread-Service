@@ -3,6 +3,7 @@ Speed test when download multiple images from internet, generate bitmap from fra
 
 Gif demo:
 
+![Screenshot_20200420-221051 (1)](https://user-images.githubusercontent.com/52622713/79767816-1588cd80-8354-11ea-91e2-78688abb9105.png)
 ![demo-speed-test](https://user-images.githubusercontent.com/52622713/79755923-144fa480-8344-11ea-8981-3ae8ad2a8423.gif)
 
 Result: Download time dependent on the internet -> unreliable.
