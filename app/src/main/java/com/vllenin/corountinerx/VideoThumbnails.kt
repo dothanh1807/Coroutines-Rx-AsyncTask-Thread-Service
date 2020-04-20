@@ -1,16 +1,18 @@
 package com.vllenin.corountinerx
 
+import android.app.Service
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.media.MediaMetadataRetriever
 import android.net.Uri
-import android.os.AsyncTask
-import android.os.Handler
-import android.os.HandlerThread
-import android.os.Message
+import android.os.*
 import android.util.AttributeSet
 import android.util.DisplayMetrics
+import android.util.Log
 import android.util.Size
 import android.view.View
 import android.view.WindowManager
@@ -46,6 +48,7 @@ class VideoThumbnails constructor(
         mutableMapOf<String, AsyncTask<Any, Bitmap, String>>()
     private val mapThread =
         mutableMapOf<String, ThumbnailsFactoryThread>()
+    private var serviceConnection: ServiceConnection? = null
 
     init {
         val extSizeAttr = intArrayOf(android.R.attr.layout_height)
@@ -87,6 +90,9 @@ class VideoThumbnails constructor(
             thread.forceStop()
         }
         mapThread.clear()
+        serviceConnection?.let {
+            context.unbindService(it)
+        }
     }
 
 
@@ -421,6 +427,90 @@ class VideoThumbnails constructor(
 
         fun forceStop() {
             isActive = false
+        }
+
+    }
+
+
+    /************************************ Use Service *********************************************/
+
+
+    fun generateThumbnailsWithService(path: String, callback: (measureTime: Long) -> Unit) {
+        timeStart = System.currentTimeMillis()
+        val retriever = MediaMetadataRetriever()
+        retriever.setDataSource(context, Uri.parse(path))
+        val durationVideo =
+            retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION).toLong()
+        val amountThumbnails = (durationVideo / DISTANCE_TIME_THUMBNAILS).toInt()
+        val distanceTime = durationVideo * 1000 / amountThumbnails
+
+        val newLayoutParams = layoutParams
+        newLayoutParams.width = thumbWidth * amountThumbnails
+        layoutParams = newLayoutParams
+
+        val intentService = Intent(context, ThumbnailsFactoryService::class.java)
+        serviceConnection = object : ServiceConnection {
+            override fun onServiceDisconnected(p0: ComponentName?) {}
+
+            override fun onServiceConnected(p0: ComponentName?, binder: IBinder) {
+                val service =
+                    (binder as ThumbnailsFactoryService.ThumbnailsFactoryBinder).getService()
+
+                service.registerRenerateThumbnails({ value ->
+                    if (value is Bitmap) {
+                        listThumbnails.add(value)
+                        invalidate()
+                    } else if (value is String){
+                        callback.invoke(System.currentTimeMillis() - timeStart)
+                    }
+                }, retriever, amountThumbnails, distanceTime, Size(thumbWidth, thumbHeight))
+            }
+        }
+        context.bindService(intentService, serviceConnection!!, Context.BIND_AUTO_CREATE)
+    }
+
+    class ThumbnailsFactoryService: Service() {
+
+        private val mapThread =
+            mutableMapOf<String, ThumbnailsFactoryThread>()
+
+        private lateinit var downloadImageBinder: ThumbnailsFactoryBinder
+
+        inner class ThumbnailsFactoryBinder: Binder() {
+            fun getService(): ThumbnailsFactoryService {
+                return this@ThumbnailsFactoryService
+            }
+        }
+
+        override fun onCreate() {
+            downloadImageBinder = ThumbnailsFactoryBinder()
+        }
+
+        override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+            return START_NOT_STICKY
+        }
+
+        override fun onBind(p0: Intent?): IBinder? {
+            return downloadImageBinder
+        }
+
+        override fun onDestroy() {
+            super.onDestroy()
+            mapThread.values.forEach { thread ->
+                thread.forceStop()
+            }
+            mapThread.clear()
+            Log.d("XXX", "~~~~~~~~~~~~~~~~~~~~~~~~~~ThumbnailsFactoryService onDestroy")
+        }
+
+        fun registerRenerateThumbnails(callback: (value: Any) -> Unit, vararg params: Any) {
+            mapThread["Thumbnails"] = ThumbnailsFactoryThread(Handler { message ->
+                val value = message.obj
+                callback.invoke(value)
+
+                true
+            }, params[0], params[1], params[2], params[3])
+            mapThread["Thumbnails"]?.start()
         }
 
     }

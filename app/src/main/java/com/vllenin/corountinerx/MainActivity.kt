@@ -46,6 +46,15 @@ class MainActivity : AppCompatActivity() {
                 .replace(R.id.fragmentContainer, FragmentThread(), FragmentThread::class.toString())
                 .commit()
         }
+
+        btnService.setOnClickListener {
+            displayButton(false)
+            supportFragmentManager
+                .beginTransaction()
+                .addToBackStack(null)
+                .replace(R.id.fragmentContainer, FragmentService(), FragmentService::class.toString())
+                .commit()
+        }
     }
 
     private fun displayButton(show: Boolean) {

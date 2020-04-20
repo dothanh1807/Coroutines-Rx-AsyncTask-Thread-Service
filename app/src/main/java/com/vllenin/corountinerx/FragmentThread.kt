@@ -3,15 +3,13 @@ package com.vllenin.corountinerx
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.os.Bundle
-import android.os.Handler
-import android.os.HandlerThread
-import android.os.Message
+import android.os.*
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import com.vllenin.corountinerx.Values.DISTANCE_DELAY
 import com.vllenin.corountinerx.Values.LINK_ONE
 import com.vllenin.corountinerx.Values.LINK_TWO
 import kotlinx.android.synthetic.main.fragment.*
@@ -46,6 +44,11 @@ class FragmentThread: Fragment() {
                 }
             }
 
+            /**
+             * Do 1 [Thread] chỉ có 1 [Looper], 1 [Looper] có thể có nhiều [Handler]
+             * Vì vậy mỗi [DownloadImageThread] mình truyền 1 [Handler] mới cũng k sao, vì [Handler]
+             * này nó mặc định lấy [Looper] của Thread khởi tạo nó, ở đây là mainThread.
+             */
             mapThread[LINK_ONE] = DownloadImageThread(Handler { message ->
                 val value = message.obj
                 Log.d("XXX", "handlerMessage: $value - ${Thread.currentThread().name}")
@@ -124,7 +127,7 @@ class FragmentThread: Fragment() {
                     }
                     data = inputStream.read(dataType)
                     if (data > 0) {
-//                        Thread.sleep(timeDelay)
+                        Thread.sleep(DISTANCE_DELAY)
                         totalData += data.toLong()
                         outputStream.write(dataType, 0, data)
                         if ((totalData * 100 / sizeFile).toInt() - percent >= 1) {
@@ -172,7 +175,7 @@ class FragmentThread: Fragment() {
         }
 
         /**
-         * Thread chết khi nó chạy xong run(), vì vậy [isActive] = false thì trong khối run sẽ
+         * Thread chết khi nó chạy xong run(), vì vậy [isActive] = false thì trong block run() sẽ
          * return luôn, tức là chạy xong luôn, khi đó Thread cũng đc chết.
          */
         fun forceStop() {
