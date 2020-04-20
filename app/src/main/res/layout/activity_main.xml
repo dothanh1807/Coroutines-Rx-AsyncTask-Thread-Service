@@ -54,6 +54,16 @@
         android:background="@drawable/button_selector"
         tools:ignore="HardcodedText" />
 
+    <Button
+        android:id="@+id/btnAllInOne"
+        android:text="   All In One   "
+        android:layout_below="@+id/btnService"
+        android:layout_centerHorizontal="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/button_selector"
+        tools:ignore="HardcodedText" />
+
     <FrameLayout
         android:id="@+id/fragmentContainer"
         android:layout_width="match_parent"

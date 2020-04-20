@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:weightSum="11"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <RelativeLayout
+        android:layout_weight="2"
+        android:layout_width="match_parent"
+        android:layout_height="0dp">
+
+        <TextView
+            android:text="Coroutines"
+            android:textColor="#2035EE"
+            android:layout_centerHorizontal="true"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:ignore="HardcodedText" />
+
+        <HorizontalScrollView
+            android:id="@+id/scrollCoroutines"
+            android:layout_centerVertical="true"
+            android:layout_width="match_parent"
+            android:scrollbars="none"
+            android:layout_height="60dp">
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="60dp"
+                android:orientation="horizontal">
+                <com.vllenin.corountinerx.VideoThumbnails
+                    android:id="@+id/videoThumbnailsCoroutines"
+                    android:layout_width="wrap_content"
+                    android:layout_height="60dp"/>
+
+            </LinearLayout>
+        </HorizontalScrollView>
+
+        <TextView
+            android:id="@+id/timeCorountines"
+            android:textColor="#2035EE"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@+id/scrollCoroutines"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:ignore="HardcodedText" />
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_weight="2"
+        android:layout_width="match_parent"
+        android:layout_height="0dp">
+
+        <TextView
+            android:text="RxKotlin"
+            android:textColor="#2035EE"
+            android:layout_centerHorizontal="true"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:ignore="HardcodedText" />
+
+        <HorizontalScrollView
+            android:id="@+id/scrollRxKotlin"
+            android:layout_centerVertical="true"
+            android:layout_width="match_parent"
+            android:scrollbars="none"
+            android:layout_height="60dp">
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="60dp"
+                android:orientation="horizontal">
+                <com.vllenin.corountinerx.VideoThumbnails
+                    android:id="@+id/videoThumbnailsRxKotlin"
+                    android:layout_width="wrap_content"
+                    android:layout_height="60dp"/>
+
+            </LinearLayout>
+        </HorizontalScrollView>
+
+        <TextView
+            android:id="@+id/timeRxKotlin"
+            android:textColor="#2035EE"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@+id/scrollRxKotlin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:ignore="HardcodedText" />
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_weight="2"
+        android:layout_width="match_parent"
+        android:layout_height="0dp">
+
+        <TextView
+            android:text="AsyncTask"
+            android:textColor="#2035EE"
+            android:layout_centerHorizontal="true"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:ignore="HardcodedText" />
+
+        <HorizontalScrollView
+            android:id="@+id/scrollAsyncTask"
+            android:layout_centerVertical="true"
+            android:layout_width="match_parent"
+            android:scrollbars="none"
+            android:layout_height="60dp">
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="60dp"
+                android:orientation="horizontal">
+                <com.vllenin.corountinerx.VideoThumbnails
+                    android:id="@+id/videoThumbnailsAsyncTask"
+                    android:layout_width="wrap_content"
+                    android:layout_height="60dp"/>
+
+            </LinearLayout>
+        </HorizontalScrollView>
+
+        <TextView
+            android:id="@+id/timeAsyncTask"
+            android:textColor="#2035EE"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@+id/scrollAsyncTask"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:ignore="HardcodedText" />
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_weight="2"
+        android:layout_width="match_parent"
+        android:layout_height="0dp">
+
+        <TextView
+            android:text="Thread"
+            android:textColor="#2035EE"
+            android:layout_centerHorizontal="true"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:ignore="HardcodedText" />
+
+        <HorizontalScrollView
+            android:id="@+id/scrollThread"
+            android:layout_centerVertical="true"
+            android:layout_width="match_parent"
+            android:scrollbars="none"
+            android:layout_height="60dp">
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="60dp"
+                android:orientation="horizontal">
+                <com.vllenin.corountinerx.VideoThumbnails
+                    android:id="@+id/videoThumbnailsThread"
+                    android:layout_width="wrap_content"
+                    android:layout_height="60dp"/>
+
+            </LinearLayout>
+        </HorizontalScrollView>
+
+        <TextView
+            android:id="@+id/timeThread"
+            android:textColor="#2035EE"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@+id/scrollThread"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:ignore="HardcodedText" />
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_weight="2"
+        android:layout_width="match_parent"
+        android:layout_height="0dp">
+
+        <TextView
+            android:text="Service"
+            android:textColor="#2035EE"
+            android:layout_centerHorizontal="true"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:ignore="HardcodedText" />
+
+        <HorizontalScrollView
+            android:id="@+id/scrollService"
+            android:layout_centerVertical="true"
+            android:layout_width="match_parent"
+            android:scrollbars="none"
+            android:layout_height="60dp">
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="60dp"
+                android:orientation="horizontal">
+                <com.vllenin.corountinerx.VideoThumbnails
+                    android:id="@+id/videoThumbnailsService"
+                    android:layout_width="wrap_content"
+                    android:layout_height="60dp"/>
+
+            </LinearLayout>
+        </HorizontalScrollView>
+
+        <TextView
+            android:id="@+id/timeService"
+            android:textColor="#2035EE"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@+id/scrollService"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:ignore="HardcodedText" />
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_weight="1"
+        android:layout_width="match_parent"
+        android:layout_height="0dp">
+
+        <Button
+            android:id="@+id/btnGenerate"
+            android:text="   Generate   "
+            android:layout_centerInParent="true"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:ignore="HardcodedText"
+            android:background="@drawable/button_selector" />
+
+    </RelativeLayout>
+
+</LinearLayout>

@@ -9,7 +9,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import com.vllenin.corountinerx.Values.DISTANCE_DELAY
 import com.vllenin.corountinerx.Values.LINK_ONE
 import com.vllenin.corountinerx.Values.LINK_TWO
 import kotlinx.android.synthetic.main.fragment.*
@@ -127,7 +126,7 @@ class FragmentThread: Fragment() {
                     }
                     data = inputStream.read(dataType)
                     if (data > 0) {
-                        Thread.sleep(DISTANCE_DELAY)
+//                        Thread.sleep(DISTANCE_DELAY)
                         totalData += data.toLong()
                         outputStream.write(dataType, 0, data)
                         if ((totalData * 100 / sizeFile).toInt() - percent >= 1) {

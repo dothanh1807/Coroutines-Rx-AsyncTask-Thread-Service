@@ -456,7 +456,7 @@ class VideoThumbnails constructor(
                 val service =
                     (binder as ThumbnailsFactoryService.ThumbnailsFactoryBinder).getService()
 
-                service.registerRenerateThumbnails({ value ->
+                service.registerGenerateThumbnails({ value ->
                     if (value is Bitmap) {
                         listThumbnails.add(value)
                         invalidate()
@@ -503,7 +503,7 @@ class VideoThumbnails constructor(
             Log.d("XXX", "~~~~~~~~~~~~~~~~~~~~~~~~~~ThumbnailsFactoryService onDestroy")
         }
 
-        fun registerRenerateThumbnails(callback: (value: Any) -> Unit, vararg params: Any) {
+        fun registerGenerateThumbnails(callback: (value: Any) -> Unit, vararg params: Any) {
             mapThread["Thumbnails"] = ThumbnailsFactoryThread(Handler { message ->
                 val value = message.obj
                 callback.invoke(value)

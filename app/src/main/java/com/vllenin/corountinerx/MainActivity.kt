@@ -55,6 +55,15 @@ class MainActivity : AppCompatActivity() {
                 .replace(R.id.fragmentContainer, FragmentService(), FragmentService::class.toString())
                 .commit()
         }
+
+        btnAllInOne.setOnClickListener {
+            displayButton(false)
+            supportFragmentManager
+                .beginTransaction()
+                .addToBackStack(null)
+                .replace(R.id.fragmentContainer, FragmentAllInOne(), FragmentAllInOne::class.toString())
+                .commit()
+        }
     }
 
     private fun displayButton(show: Boolean) {
@@ -64,12 +73,14 @@ class MainActivity : AppCompatActivity() {
             btnAsyncTask.visibility = View.VISIBLE
             btnThread.visibility = View.VISIBLE
             btnService.visibility = View.VISIBLE
+            btnAllInOne.visibility = View.VISIBLE
         } else {
             btnCoroutines.visibility = View.INVISIBLE
             btnRxKotlin.visibility = View.INVISIBLE
             btnAsyncTask.visibility = View.INVISIBLE
             btnThread.visibility = View.INVISIBLE
             btnService.visibility = View.INVISIBLE
+            btnAllInOne.visibility = View.INVISIBLE
         }
     }
 
