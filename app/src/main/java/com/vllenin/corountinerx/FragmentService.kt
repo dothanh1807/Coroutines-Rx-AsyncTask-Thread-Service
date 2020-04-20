@@ -123,6 +123,11 @@ class FragmentService: Fragment() {
             Log.d("XXX", "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~DownloadImageService onDestroy")
         }
 
+        /**
+         * Do [Service] chạy trên mainThread, nên k thể download 2 image cùng 1 lúc. Vì vậy bản thân
+         * [Service] phải tự khởi tạo các [Thread] -> Tái sử dụng [FragmentThread.DownloadImageThread]
+         * đã có.
+         */
         fun registerDownloadImage(path: String, observer: Observer) {
             mapThread[path] = FragmentThread.DownloadImageThread(Handler { message ->
                 val value = message.obj
